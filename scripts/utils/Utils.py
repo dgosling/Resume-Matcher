@@ -18,81 +18,135 @@ def generate_unique_id():
     Generate a unique ID and return it as a string.
 
     Returns:
-        str: A string with a unique ID.
+        str: A string with a unique UUID.
     """
     return str(uuid4())
 
 
 class TextCleaner:
     """
-    A class for cleaning a text by removing specific patterns.
+    A class for cleaning text by removing specific patterns such as emails, links,
+    punctuation, and stopwords, and for normalizing text.
     """
 
-    def remove_emails_links(text):
+    def remove_emails_links(self, text: str) -> str:
         """
-        Clean the input text by removing specific patterns.
+        Remove emails and links from the input text using regex patterns.
 
         Args:
             text (str): The input text to clean.
 
         Returns:
-            str: The cleaned text.
+            str: The text with emails and links removed.
         """
-        for pattern in REGEX_PATTERNS:
-            text = re.sub(REGEX_PATTERNS[pattern], "", text)
+        for pattern in REGEX_PATTERNS.values():
+            text = re.sub(pattern, "", text)
         return text
 
-    def clean_text(text):
+    def remove_punctuation(self, text: str) -> str:
         """
-        Clean the input text by removing specific patterns.
+        Remove punctuation from the input text.
 
         Args:
             text (str): The input text to clean.
 
         Returns:
-            str: The cleaned text.
+            str: The text with punctuation removed.
         """
-        text = TextCleaner.remove_emails_links(text)
         doc = nlp(text)
-        for token in doc:
-            if token.pos_ == "PUNCT":
-                text = text.replace(token.text, "")
-        return str(text)
+        tokens = [
+            token.text for token in doc if not token.is_punct and not token.is_space
+        ]
+        return " ".join(tokens)
 
-    def remove_stopwords(text):
+    def remove_stopwords(self, text: str) -> str:
         """
-        Clean the input text by removing stopwords.
+        Remove stopwords from the input text.
 
         Args:
             text (str): The input text to clean.
 
         Returns:
-            str: The cleaned text.
+            str: The text with stopwords removed.
         """
         doc = nlp(text)
-        for token in doc:
-            if token.is_stop:
-                text = text.replace(token.text, "")
+        tokens = [
+            token.text
+            for token in doc
+            if not token.is_stop and not token.is_punct and not token.is_space
+        ]
+        return " ".join(tokens)
+
+    def normalize_text(self, text: str) -> str:
+        """
+        Normalize the text by converting to lowercase and removing extra whitespace.
+
+        Args:
+            text (str): The input text to normalize.
+
+        Returns:
+            str: The normalized text.
+        """
+        text = text.lower()
+        text = re.sub(r"\s+", " ", text).strip()
+        return text
+
+    def clean_text(self, text: str) -> str:
+        """
+        Clean the input text by removing emails, links, punctuation, stopwords,
+        and normalizing it.
+
+        Args:
+            text (str): The input text to clean.
+
+        Returns:
+            str: The fully cleaned text.
+        """
+        text = self.remove_emails_links(text)
+        text = self.remove_punctuation(text)
+        text = self.remove_stopwords(text)
+        text = self.normalize_text(text)
         return text
 
 
 class CountFrequency:
+    """
+    A class for counting the frequency of parts of speech or words in text.
+    """
 
-    def __init__(self, text):
+    def __init__(self, text: str):
+        """
+        Initialize the CountFrequency class.
+
+        Args:
+            text (str): The text to analyze.
+        """
         self.text = text
         self.doc = nlp(text)
 
-    def count_frequency(self):
+    def count_pos_frequency(self) -> dict:
+        """
+        Count the frequency of parts of speech in the input text.
+
+        Returns:
+            dict: A dictionary with POS tags as keys and their frequencies as values.
+        """
+        pos_freq = {}
+        for token in self.doc:
+            pos = token.pos_
+            pos_freq[pos] = pos_freq.get(pos, 0) + 1
+        return pos_freq
+
+    def count_word_frequency(self) -> dict:
         """
         Count the frequency of words in the input text.
 
         Returns:
-            dict: A dictionary with the words as keys and the frequency as values.
+            dict: A dictionary with words as keys and their frequencies as values.
         """
-        pos_freq = {}
+        word_freq = {}
         for token in self.doc:
-            if token.pos_ in pos_freq:
-                pos_freq[token.pos_] += 1
-            else:
-                pos_freq[token.pos_] = 1
-        return pos_freq
+            if not token.is_punct and not token.is_space:
+                word = token.text.lower()
+                word_freq[word] = word_freq.get(word, 0) + 1
+        return word_freq

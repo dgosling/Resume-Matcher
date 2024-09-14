@@ -1,3 +1,3 @@
-from .logger import init_logging_config
 from .ReadFiles import get_filenames_from_dir
-from .Utils import TextCleaner
+from .Utils import TextCleaner, REGEX_PATTERNS
+from .logger import init_logging_config

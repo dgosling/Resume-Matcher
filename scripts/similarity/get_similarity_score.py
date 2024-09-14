@@ -124,7 +124,7 @@ class QdrantSearch:
         self.qdrant_url = config["qdrant"]["url"]
         self.resumes = resumes
         self.jd = jd
-        self.cohere = cohere.Client(self.cohere_key)
+        self.cohere = self.cohere.Client(self.cohere_key)
         self.collection_name = "resume_collection_name"
         self.qdrant = QdrantClient(
             url=self.qdrant_url,
