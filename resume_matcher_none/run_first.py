@@ -2,8 +2,9 @@ import logging
 import os
 
 from tqdm import tqdm
-from resume_matcher.scripts.processor import Processor
-from resume_matcher.scripts.utils import get_filenames_from_dir, find_path
+
+from resume_matcher_none.scripts.processor import Processor
+from resume_matcher_none.scripts.utils import get_filenames_from_dir, find_path
 
 cwd = find_path("Resume-Matcher")
 RESUMES_PATH = os.path.join(cwd, "Data", "Resumes/")

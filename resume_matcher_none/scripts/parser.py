@@ -1,7 +1,7 @@
-from resume_matcher.dataextractor.DataExtractor import DataExtractor
-from resume_matcher.dataextractor.KeyTermExtractor import KeytermExtractor
-from resume_matcher.dataextractor.TextCleaner import TextCleaner, CountFrequency
-from resume_matcher.scripts.utils import generate_unique_id
+from resume_matcher_none.dataextractor.DataExtractor import DataExtractor
+from resume_matcher_none.dataextractor.KeyTermExtractor import KeytermExtractor
+from resume_matcher_none.dataextractor.TextCleaner import TextCleaner, CountFrequency
+from resume_matcher_none.scripts.utils import generate_unique_id
 
 
 class ParseDocumentToJson:

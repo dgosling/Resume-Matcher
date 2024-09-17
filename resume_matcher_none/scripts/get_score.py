@@ -4,7 +4,7 @@ from typing import List
 
 from qdrant_client import QdrantClient
 
-from resume_matcher.scripts.utils import find_path, read_json
+from resume_matcher_none.scripts.utils import find_path, read_json
 
 # Get the logger
 logger = logging.getLogger(__name__)

@@ -3,7 +3,7 @@ import urllib
 
 import spacy
 
-from resume_matcher.dataextractor.TextCleaner import TextCleaner
+from resume_matcher_none.dataextractor.TextCleaner import TextCleaner
 
 # Load the English model
 nlp = spacy.load("en_core_web_md")

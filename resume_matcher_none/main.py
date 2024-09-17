@@ -1,9 +1,9 @@
 import os
 
-from resume_matcher.run_first import run_first
-from resume_matcher.scripts.get_score import get_score
-from resume_matcher.scripts.logger import init_logging_config
-from resume_matcher.scripts.utils import find_path, read_json
+from resume_matcher_none.run_first import run_first
+from resume_matcher_none.scripts.get_score import get_score
+from resume_matcher_none.scripts.logger import init_logging_config
+from resume_matcher_none.scripts.utils import find_path, read_json
 
 init_logging_config()
 
@@ -18,7 +18,9 @@ PROCESSED_JOB_DESCRIPTIONS_PATH = os.path.join(
 
 
 def get_filenames_from_dir(directory):
-    return [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+    return [
+        f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))
+    ]
 
 
 def process_files(resume, job_description):
@@ -34,6 +36,3 @@ def process_files(resume, job_description):
         print(r.score)
     print(f"Processing resume: {resume}")
     print(f"Processing job description: {job_description}")
-
-
-
