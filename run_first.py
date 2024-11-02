@@ -1,88 +1,113 @@
-import json
 import logging
-import os
+from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
 
 from scripts import JobDescriptionProcessor, ResumeProcessor
-from scripts.utils import get_filenames_from_dir, init_logging_config
-
-init_logging_config()
-
-PROCESSED_RESUMES_PATH = "Data/Processed/Resumes"
-PROCESSED_JOB_DESCRIPTIONS_PATH = "Data/Processed/JobDescription"
+from scripts.utils import init_logging_config
 
 
-def read_json(filename):
-    with open(filename) as f:
-        data = json.load(f)
-    return data
+class DocumentType(Enum):
+    RESUME = "resume"
+    JOB_DESCRIPTION = "job_description"
 
 
-def remove_old_files(files_path):
-    if not os.path.exists(files_path): # Check if the folder exists or not.
-        # Create the folder if it doesn't exist to avoid error in the next step.
-        os.makedirs(files_path)
+@dataclass
+class ProcessingConfig:
+    base_dir: Path = Path("Data")
+    input_resume_dir: Path = Path("Data/Resumes")
+    input_job_dir: Path = Path("Data/JobDescription")
+    processed_resume_dir: Path = Path("Data/Processed/Resumes")
+    processed_job_dir: Path = Path("Data/Processed/JobDescription")
 
-    for filename in os.listdir(files_path):
+
+class DocumentProcessor:
+    """Main class to handle document processing for both resumes and job descriptions."""
+
+    def __init__(self, config: ProcessingConfig = ProcessingConfig()):
+        self.config = config
+        init_logging_config()
+        self._setup_directories()
+
+    def _setup_directories(self) -> None:
+        """Ensure all necessary directories exist."""
+        directories = [
+            self.config.processed_resume_dir,
+            self.config.processed_job_dir,
+            self.config.input_resume_dir,
+            self.config.input_job_dir,
+        ]
+        for directory in directories:
+            directory.mkdir(parents=True, exist_ok=True)
+
+    def _clean_directory(self, directory: Path) -> None:
+        """Remove all files from the specified directory."""
         try:
-            file_path = os.path.join(files_path, filename)
-
-            if os.path.isfile(file_path):
-                os.remove(file_path)
+            for file_path in directory.glob("*"):
+                if file_path.is_file():
+                    file_path.unlink()
+            logging.info(f"Cleaned directory: {directory}")
         except Exception as e:
-            logging.error(f"Error deleting {file_path}:\n{e}")
+            logging.error(f"Error cleaning directory {directory}: {e}")
 
-    logging.info("Deleted old files from " + files_path)
+    def _process_documents(
+        self, doc_type: DocumentType, input_dir: Path, processed_dir: Path
+    ) -> bool:
+        """Process all documents of a specific type."""
+        try:
+            self._clean_directory(processed_dir)
+
+            files = list(input_dir.glob("*"))
+            if not files:
+                logging.error(f"No {doc_type.value}s found in {input_dir}")
+                return False
+
+            logging.info(f"Processing {len(files)} {doc_type.value}s")
+
+            for file_path in files:
+                processor_class = (
+                    ResumeProcessor
+                    if doc_type == DocumentType.RESUME
+                    else JobDescriptionProcessor
+                )
+                processor = processor_class(str(file_path))
+                if not processor.process():
+                    logging.warning(f"Failed to process {file_path}")
+
+            logging.info(f"Completed processing {doc_type.value}s")
+            return True
+
+        except Exception as e:
+            logging.error(f"Error processing {doc_type.value}s: {e}")
+            return False
+
+    def process_all(self) -> bool:
+        """Process both resumes and job descriptions."""
+        resume_success = self._process_documents(
+            DocumentType.RESUME,
+            self.config.input_resume_dir,
+            self.config.processed_resume_dir,
+        )
+
+        job_desc_success = self._process_documents(
+            DocumentType.JOB_DESCRIPTION,
+            self.config.input_job_dir,
+            self.config.processed_job_dir,
+        )
+
+        if resume_success and job_desc_success:
+            logging.info("Successfully processed all documents")
+            logging.info("You can now run 'streamlit run streamlit_second.py'")
+            return True
+        return False
 
 
-logging.info("Started to read from Data/Resumes")
-try:
-    # Check if there are resumes present or not.
-    if not os.path.exists(PROCESSED_RESUMES_PATH):
-        # If not present then create one.
-        os.makedirs(PROCESSED_RESUMES_PATH)
-    else:
-        # If present then parse it.
-        remove_old_files(PROCESSED_RESUMES_PATH)
+def main():
+    """Main entry point for the document processing script."""
+    processor = DocumentProcessor()
+    if not processor.process_all():
+        exit(1)
 
-    file_names = get_filenames_from_dir("Data/Resumes")
-    logging.info("Reading from Data/Resumes is now complete.")
-except:
-    # Exit the program if there are no resumes.
-    logging.error("There are no resumes present in the specified folder.")
-    logging.error("Exiting from the program.")
-    logging.error("Please add resumes in the Data/Resumes folder and try again.")
-    exit(1)
 
-# Now after getting the file_names parse the resumes into a JSON Format.
-logging.info("Started parsing the resumes.")
-for file in file_names:
-    processor = ResumeProcessor(file)
-    success = processor.process()
-logging.info("Parsing of the resumes is now complete.")
-
-logging.info("Started to read from Data/JobDescription")
-try:
-    # Check if there are resumes present or not.
-    if not os.path.exists(PROCESSED_JOB_DESCRIPTIONS_PATH):
-        # If not present then create one.
-        os.makedirs(PROCESSED_JOB_DESCRIPTIONS_PATH)
-    else:  
-    # If present then parse it.
-        remove_old_files(PROCESSED_JOB_DESCRIPTIONS_PATH)
-
-    file_names = get_filenames_from_dir("Data/JobDescription")
-    logging.info("Reading from Data/JobDescription is now complete.")
-except:
-    # Exit the program if there are no resumes.
-    logging.error("There are no job-description present in the specified folder.")
-    logging.error("Exiting from the program.")
-    logging.error("Please add resumes in the Data/JobDescription folder and try again.")
-    exit(1)
-
-# Now after getting the file_names parse the resumes into a JSON Format.
-logging.info("Started parsing the Job Descriptions.")
-for file in file_names:
-    processor = JobDescriptionProcessor(file)
-    success = processor.process()
-logging.info("Parsing of the Job Descriptions is now complete.")
-logging.info("Success now run `streamlit run streamlit_second.py`")
+if __name__ == "__main__":
+    main()

@@ -1,10 +1,7 @@
-import json
-import os
-import pathlib
-
-from scripts.Extractor import DataExtractor
+from scripts.Extractor import EnhancedDataExtractor
 from scripts.KeytermsExtraction import KeytermExtractor
 from scripts.utils.Utils import CountFrequency, TextCleaner, generate_unique_id
+
 
 SAVE_DIRECTORY = "../../Data/Processed/JobDescription"
 
@@ -14,8 +11,10 @@ class ParseJobDesc:
     def __init__(self, job_desc: str):
         self.job_desc_data = job_desc
         self.clean_data = TextCleaner.clean_text(self.job_desc_data)
-        self.entities = DataExtractor(self.clean_data).extract_entities()
-        self.key_words = DataExtractor(self.clean_data).extract_particular_words()
+        self.entities = EnhancedDataExtractor(self.clean_data).extract_entities()
+        self.key_words = EnhancedDataExtractor(self.clean_data).extract_all(
+            self.clean_data
+        )["entities"]
         self.pos_frequencies = CountFrequency(self.clean_data).count_frequency()
         self.keyterms = KeytermExtractor(self.clean_data).get_keyterms_based_on_sgrank()
         self.bi_grams = KeytermExtractor(self.clean_data).bi_gramchunker()
